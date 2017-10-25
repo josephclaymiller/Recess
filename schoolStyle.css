@@ -3,9 +3,19 @@ body {
 }
 
 .sjs {
-    background: #f0f0f0 ;
-    border: 1px #333 solid ;
+    background: #f0f0f0;
+    background-image: url("images/blacktop.png");
+    border: 1px #333 solid;
     margin: auto;
     width: 1920px;
     padding: 10px;
+}
+
+#school {
+    background-image: url("images/school.png");
+    background-repeat: no-repeat;
+    width: 1920px;
+    height: 200px;
+    padding-top: 2000px;
+    margin: auto;
 }
