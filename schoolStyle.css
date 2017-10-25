@@ -1,0 +1,11 @@
+body {
+    background-color: lightgreen;
+}
+
+.sjs {
+    background: #f0f0f0 ;
+    border: 1px #333 solid ;
+    margin: auto;
+    width: 1920px;
+    padding: 10px;
+}

@@ -4,9 +4,9 @@
 
 //==== configuration ===================================================
 
-var POPULATION= 50 ;
-var SCENE_WIDTH= 1640 ;
-var SCENE_HEIGHT= 1480 ;
+var POPULATION= 20 ;
+var SCENE_WIDTH= 1920 ;
+var SCENE_HEIGHT= 1080 ;
 var MAX_MOVE= 10 ;
 var SECONDS_PER_TICK= 0.1 ;
 
