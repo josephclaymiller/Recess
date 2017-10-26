@@ -5,9 +5,9 @@
 //==== configuration ===================================================
 
 var POPULATION= 20 ;
-var SCENE_WIDTH= 640 ;
-var SCENE_HEIGHT= 480 ;
-var MAX_MOVE= 20 ;
+var SCENE_WIDTH= 1920 ;
+var SCENE_HEIGHT= 1080 ;
+var MAX_MOVE= 10 ;
 var MAX_ACCELERATE= 5 ;
 var SECONDS_PER_TICK= 0.1 ;
 
@@ -76,6 +76,9 @@ function init(num_people) {
     }
     if (attempts>=20)
 	alert("We're having trouble placing enough people in this scene.  Either increase the size of the scene, or reduce the population, or reduce the sizes by reducing the percentages of high-status people.") ;
+
+    var audio = new Audio("audio/MUS_RoughMusicBaseIdea.wav");
+    audio.play();
 
     ticker.run() ;
 }
@@ -224,8 +227,8 @@ function move_person(person) {
     // I tried to make these formulae clear but failed.
     if (new_x < sp.w*(sp.xscale-1)/2) new_x= sp.w*(sp.xscale-1)/2, person.vx= 0 ;
     if (new_x > scene.w - sp.w - sp.w*(sp.xscale-1)/2)
-	new_x= scene.w - sp.w - sp.w*(sp.xscale-1)/2, person.vy= 0 ;
-    if (new_y < sp.h*(sp.yscale-1)/2) new_y= sp.h*(sp.yscale-1)/2, person.vx= 0 ;
+	new_x= scene.w - sp.w - sp.w*(sp.xscale-1)/2, person.vx= 0 ;
+    if (new_y < sp.h*(sp.yscale-1)/2) new_y= sp.h*(sp.yscale-1)/2, person.vy= 0 ;
     if (new_y > scene.h - sp.h - sp.h*(sp.yscale-1)/2)
 	new_y= scene.h - sp.h - sp.h*(sp.yscale-1)/2, person.vy= 0 ;
 
@@ -235,6 +238,9 @@ function move_person(person) {
 
 
 function collide(p1, p2) {
+    var audio = new Audio("audio/SFX_Bump_01.wav");
+    audio.play();
+
     // if either both allies or both aggressors
     if (p1.aggression*p2.aggression>0) {
 	add_to_aggression(p1, ALIKE_BUMP_INFLUENCE*p2.status*p2.aggression) ;
