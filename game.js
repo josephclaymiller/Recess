@@ -7,7 +7,8 @@
 var POPULATION= 20 ;
 var SCENE_WIDTH= 640 ;
 var SCENE_HEIGHT= 480 ;
-var MAX_MOVE= 10 ;
+var MAX_MOVE= 20 ;
+var MAX_ACCELERATE= 5 ;
 var SECONDS_PER_TICK= 0.1 ;
 
 var ALIKE_BUMP_INFLUENCE= 0.1 ;
@@ -27,6 +28,7 @@ var STATUS_SIZES= [0.4, 0.8, 1.2, 1.6, 2] ;
 // { sp,
 //   aggression,
 //   status,
+//   vx, vy,
 //   last_bump,
 //   last_bumped,
 //   last_bump_strength
@@ -97,14 +99,18 @@ function add_person(aggression, pstatus) {    // "status" is a property of Windo
 	    }
 	}
     } while (does_collide) ;
-    var new_person= {sp: sp, aggression: aggression, status: pstatus} ;
+    var new_person= {sp: sp, aggression: aggression, status: pstatus, vx: 0, vy: 0} ;
     sp.dom.addEventListener('click', function(e) { click_on_person(e, new_person) } , true) ;   // note closure
     new_person.sp.update() ;
     person.push(new_person) ;
 }
 
 
+// unfortunately, the collision detection in sprite.js only checks the boundary
+//   rectangles for collision, not the sprites themselves.  So we just use a
+//   radius here.
 function collides(s1, s2) {
+//    return s1.collidesWith(s2) ;   // could also use sp.collidesWithArray(person)
     return ( within_range(s1, s2, ((s1.w*s1.xscale + s2.w*s2.xscale) / Math.SQRT2)) ) ;
 }
 
@@ -196,19 +202,32 @@ function tick() {
 
 function move_person(person) {
     var sp= person.sp ;
-    var dist= Math.random()*MAX_MOVE ;
+    var dist= Math.random()*MAX_ACCELERATE ;
     var angle= Math.random()*2*Math.PI ;
-    var new_x= sp.x + dist*Math.cos(angle) ;
-    var new_y= sp.y + dist*Math.sin(angle) ;
+    var new_vx= person.vx + dist*Math.cos(angle) ;
+    var new_vy= person.vy + dist*Math.sin(angle) ;
+    var speed2= new_vx*new_vx + new_vy*new_vy ;
+
+    if (speed2 > MAX_MOVE*MAX_MOVE) {
+	new_vx*= MAX_MOVE/speed2 ;
+	new_vy*= MAX_MOVE/speed2 ;
+    }
+    person.vx= new_vx ;
+    person.vy= new_vy ;
+
+    var new_x= sp.x + new_vx ;
+    var new_y= sp.y + new_vy ;
 
     // Setting max and min positions is messy.  Sprite.js sets the position of
     //   a sprite to the top left corner of the unscaled image, even when the
     //   images is then scaled.  However, scaling an image keeps the same center.
     // I tried to make these formulae clear but failed.
-    if (new_x < sp.w*(sp.xscale-1)/2) new_x= sp.w*(sp.xscale-1)/2 ;
-    if (new_x > scene.w - sp.w - sp.w*(sp.xscale-1)/2) new_x= scene.w - sp.w - sp.w*(sp.xscale-1)/2 ;
-    if (new_y < sp.h*(sp.yscale-1)/2) new_y= sp.h*(sp.yscale-1)/2 ;
-    if (new_y > scene.h - sp.h - sp.h*(sp.yscale-1)/2) new_y= scene.h - sp.h - sp.h*(sp.yscale-1)/2 ;
+    if (new_x < sp.w*(sp.xscale-1)/2) new_x= sp.w*(sp.xscale-1)/2, person.vx= 0 ;
+    if (new_x > scene.w - sp.w - sp.w*(sp.xscale-1)/2)
+	new_x= scene.w - sp.w - sp.w*(sp.xscale-1)/2, person.vy= 0 ;
+    if (new_y < sp.h*(sp.yscale-1)/2) new_y= sp.h*(sp.yscale-1)/2, person.vx= 0 ;
+    if (new_y > scene.h - sp.h - sp.h*(sp.yscale-1)/2)
+	new_y= scene.h - sp.h - sp.h*(sp.yscale-1)/2, person.vy= 0 ;
 
     person.sp.position(new_x, new_y) ;
     person.sp.update() ;
