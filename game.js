@@ -64,6 +64,10 @@ function resume_ticker() {
     ticker.resume() ;
 }
 
+function update_score() {
+    document.getElementById("score").innerHTML = "Score: " + happiness;
+}
+
 
 function play_sound(s) {
     try {
@@ -232,6 +236,9 @@ function tick() {
 
     happiness+= 0.2 ;
     if (happiness>25) happiness=25 ;
+
+    // show score
+    update_score();
 }
 
 
