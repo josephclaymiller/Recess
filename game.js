@@ -51,11 +51,15 @@ scene.loadImages(images, function() { init(POPULATION) } ) ;
 //======================================================================
 
 function pause_ticker() {
+    document.getElementById("pause").style.display = "none";
+    document.getElementById("resume").style.display = "block";
     ticker.pause() ;
 }
 
 // work around bug where extra resume() call accelerates ticker, by pausing first.
 function resume_ticker() {
+    document.getElementById("resume").style.display = "none";
+    document.getElementById("pause").style.display = "block";
     ticker.pause() ;
     ticker.resume() ;
 }

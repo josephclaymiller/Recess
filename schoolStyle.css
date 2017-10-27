@@ -11,19 +11,49 @@ body {
     padding: 10px;
 }
 
-#school {
-    background-image: url("images/school.png");
+#topBar {
+    height: 80px;
+    width: 100%;
+}
+
+#title{
+    background-image: url("images/title.png");
     background-repeat: no-repeat;
-    width: 1920px;
-    height: 200px;
-    padding-top: 2000px;
+    width: 320px;
+    height: 80px;
     margin: auto;
+}
+
+#score {
+    position: fixed;
+    top: 50px;
+    color: green;
+    z-index: 1;
+    font-size: 24;
+    background-color: lightgreen;
+    padding: 4px;
+}
+
+#pause {
+    position: fixed;
+    left: 0;
+    padding: 2px;
+    margin: 5px;
+    z-index: 1;
+}
+
+#resume {
+    position: fixed;
+    left: 0;
+    padding: 2px;
+    margin: 5px;
+    z-index: 1;
+    display: none;
 }
 
 .button {
     background-color: #4CAF50; /* Green */
     font-size: 16pt;
-    float: right;
 }
 
 .button:hover {
