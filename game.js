@@ -17,11 +17,11 @@ var CLICK_RANGE= 200 ;
 
 var STATUS_DISTRIBUTION= [69, 15, 10, 5, 1] ;
 var AGGRESSION_DISTRIBUTION= [ [10, 2],
-			       [10, -2],
-			       [80, 0]
+			       [20, -2],
+			       [70, 0]
 			     ] ;
 
-var STATUS_SIZES= [0.4, 0.8, 1.2, 1.6, 2] ;
+var STATUS_SIZES= [0.4, 0.6, 0.8, 1.0, 1.2] ;
 
 //======================================================================
 
@@ -64,9 +64,9 @@ function resume_ticker() {
     ticker.resume() ;
 }
 
-function update_score() {
-    var score = Math.round(happiness);
-    document.getElementById("score").innerHTML = "Score: " + score;
+
+function update_happiness() {
+    document.getElementById("happiness").innerHTML = "Happiness: " + Math.round(happiness*100)/100;
 }
 
 
@@ -124,7 +124,7 @@ function add_person(aggression, pstatus) {    // "status" is a property of Windo
 	vx: 0,
 	vy: 0,
 	get state() { return person_state(this) },
-	get aggression_impact() { return this.aggression*this.status }
+	get aggression_impact() { return this.aggression*this.status/2 }  // experimenting....
 //      last_bump_time,
 //      last_bump_by,
 //      last_bump_magnitude
@@ -148,7 +148,7 @@ function person_state(person) {
 //   radius here.
 function collides(s1, s2) {
 //    return s1.collidesWith(s2) ;   // could also use sp.collidesWithArray(people)
-    return ( within_range(s1, s2, ((s1.w*s1.xscale + s2.w*s2.xscale) / Math.SQRT2)) ) ;
+    return ( within_range(s1, s2, ((s1.w*s1.xscale + s2.w*s2.xscale) / Math.SQRT2 / 1.3)) ) ;
 }
 
 // returns true if the centers of two sprites are within given distance, efficiently
@@ -222,9 +222,10 @@ function tick() {
 		collide(people[i], people[j]) ;
 		people[i].sp.position(people[i].old_pos.x, people[i].old_pos.y) ;
 		people[j].sp.position(people[j].old_pos.x, people[j].old_pos.y) ;
+		redirect_after_collision(people[i], people[j]) ;
 	    }
 
-    // clear out dead persons
+    // clear out dead people
     var i= 0 ;
     while (i<people.length) {
 	if (people[i].sp.xscale==0) {
@@ -235,11 +236,11 @@ function tick() {
 	}
     }
 
-    happiness+= 0.2 ;
+    happiness+= 0.2*SECONDS_PER_TICK ;
     if (happiness>25) happiness=25 ;
 
-    // show score
-    update_score();
+    // show happiness
+    update_happiness();
 }
 
 
@@ -265,15 +266,35 @@ function move_person(person) {
     //   a sprite to the top left corner of the unscaled image, even when the
     //   images is then scaled.  However, scaling an image keeps the same center.
     // I tried to make these formulae clear but failed.
-    if (new_x < sp.w*(sp.xscale-1)/2) new_x= sp.w*(sp.xscale-1)/2, person.vx= 0 ;
+    // Besides setting max and min positions, also reverse vx and vy appropriately,
+    //   i.e. sprites bounce off borders.
+    if (new_x < sp.w*(sp.xscale-1)/2)
+	new_x= sp.w*(sp.xscale-1)/2, person.vx= -person.vx ;
     if (new_x > scene.w - sp.w - sp.w*(sp.xscale-1)/2)
-	new_x= scene.w - sp.w - sp.w*(sp.xscale-1)/2, person.vx= 0 ;
-    if (new_y < sp.h*(sp.yscale-1)/2) new_y= sp.h*(sp.yscale-1)/2, person.vy= 0 ;
+	new_x= scene.w - sp.w - sp.w*(sp.xscale-1)/2, person.vx= -person.vx ;
+    if (new_y < sp.h*(sp.yscale-1)/2)
+	new_y= sp.h*(sp.yscale-1)/2, person.vy= -person.vy ;
     if (new_y > scene.h - sp.h - sp.h*(sp.yscale-1)/2)
-	new_y= scene.h - sp.h - sp.h*(sp.yscale-1)/2, person.vy= 0 ;
+	new_y= scene.h - sp.h - sp.h*(sp.yscale-1)/2, person.vy= -person.vy ;
 
     person.sp.position(new_x, new_y) ;
     person.sp.update() ;
+}
+
+
+function redirect_after_collision(p1, p2) {
+    var v1= Math.sqrt(p1.vx*p1.vx+p1.vy*p1.vy) ;
+    var v2= Math.sqrt(p2.vx*p2.vx+p2.vy*p2.vy) ;
+    var theta1= Math.atan2(p1.vy, p1.vx) ;
+    var theta2= Math.atan2(p2.vy, p2.vx) ;
+    var phi= Math.atan2(p1.sp.y-p2.sp.y, p1.sp.x-p2.sp.x) ;
+
+    // From https://en.wikipedia.org/wiki/Elastic_collision#Two-dimensional_collision_with_two_moving_objects
+    // Simplified, since the "masses" are treated as being the same, i.e. m1==m2 .
+    p1.vx= v2*Math.cos(theta2-phi)*Math.cos(phi) + v1*Math.sin(theta1-phi)*Math.cos(phi+Math.PI/2) ;
+    p1.vy= v2*Math.cos(theta2-phi)*Math.sin(phi) + v1*Math.sin(theta1-phi)*Math.sin(phi+Math.PI/2) ;
+    p2.vx= v1*Math.cos(theta1-phi)*Math.cos(phi) + v2*Math.sin(theta2-phi)*Math.cos(phi+Math.PI/2) ;
+    p2.vy= v1*Math.cos(theta1-phi)*Math.sin(phi) + v2*Math.sin(theta2-phi)*Math.sin(phi+Math.PI/2) ;
 }
 
 
