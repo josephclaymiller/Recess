@@ -17,8 +17,8 @@ var CLICK_RANGE= 200 ;
 
 var STATUS_DISTRIBUTION= [69, 15, 10, 5, 1] ;
 var AGGRESSION_DISTRIBUTION= [ [10, 2],
-			       [10, -2],
-			       [80, 0]
+			       [20, -2],
+			       [70, 0]
 			     ] ;
 
 var STATUS_SIZES= [0.4, 0.6, 0.8, 1.0, 1.2] ;
@@ -64,8 +64,8 @@ function resume_ticker() {
     ticker.resume() ;
 }
 
-function update_score() {
-    document.getElementById("score").innerHTML = "Score: " + happiness;
+function update_happiness() {
+    document.getElementById("happiness").innerHTML = "Happiness: " + Math.round(happiness*100)/100;
 }
 
 
@@ -123,7 +123,7 @@ function add_person(aggression, pstatus) {    // "status" is a property of Windo
 	vx: 0,
 	vy: 0,
 	get state() { return person_state(this) },
-	get aggression_impact() { return this.aggression*this.status }
+	get aggression_impact() { return this.aggression*this.status/2 }  // experimenting....
 //      last_bump_time,
 //      last_bump_by,
 //      last_bump_magnitude
@@ -235,11 +235,11 @@ function tick() {
 	}
     }
 
-    happiness+= 0.2 ;
+    happiness+= 0.2*SECONDS_PER_TICK ;
     if (happiness>25) happiness=25 ;
 
-    // show score
-    update_score();
+    // show happiness
+    update_happiness();
 }
 
 

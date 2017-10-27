@@ -25,7 +25,7 @@ body {
     margin: auto;
 }
 
-#score {
+#happiness {
     position: fixed;
     top: 50px;
     color: green;
