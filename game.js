@@ -4,15 +4,16 @@
 
 //==== configuration ===================================================
 
-var POPULATION= 20 ;
+var POPULATION= 50 ;
 var SCENE_WIDTH= 1920 ;
 var SCENE_HEIGHT= 1080 ;
-var MAX_MOVE= 10 ;
-var MAX_ACCELERATE= 5 ;
+var MAX_MOVE= 30 ;
+var MAX_ACCELERATE= 10 ;
 var SECONDS_PER_TICK= 0.1 ;
 
 var ALIKE_BUMP_INFLUENCE= 0.1 ;
 var INFLUENCE_RANGE= 200 ;
+var CLICK_RANGE= 200 ;
 
 var STATUS_DISTRIBUTION= [69, 15, 10, 5, 1] ;
 var AGGRESSION_DISTRIBUTION= [ [10, 2],
@@ -24,16 +25,7 @@ var STATUS_SIZES= [0.4, 0.8, 1.2, 1.6, 2] ;
 
 //======================================================================
 
-// One person is:
-// { sp,
-//   aggression,
-//   status,
-//   vx, vy,
-//   last_bump,
-//   last_bumped,
-//   last_bump_strength
-// }
-var person= [] ;
+var people= [] ;
 
 var scene= sjs.Scene({w: SCENE_WIDTH, h: SCENE_HEIGHT}) ;
 
@@ -42,6 +34,14 @@ var happiness= 25 ;
 
 var images= 'aggressor1.png aggressor2.png aggressor3.png aggressor4.png aggressor5.png ally1.png ally2.png ally3.png ally4.png ally5.png bystander.png target.png'.split(/\s+/) ;
 for (var i= 0 ; i<images.length ; i++)  images[i]= 'images/'+images[i] ;
+
+// preload sounds
+var sounds= 'MUS_Level_1.wav MUS_Level_2.wav MUS_Level_3.wav SFX_Bump_1.mp3 SFX_Bump_2.mp3 SFX_Bump_3.mp3 SFX_Bump_4.mp3 SFX_Bump_5.mp3 SFX_StartClick.mp3 SFX_New_Ally_Sound_01.mp3 SFX_Make_Friend.mp3 SFX_Click_Aggressor.mp3 SFX_Drag_Ally.mp3 SFX_Support_Target.mp3 SFX_Preemptive_Click.mp3 SFX_Ally_Win.mp3 SFX_Aggressor_Win.mp3 Mus_Player_Win.mp3 Mus_Player_Lose.mp3'.split(/\s+/) ;
+var sound= {} ;
+for (var i= 0 ; i<sounds.length ; i++)
+    try {
+	sound[sounds[i]]= new Audio('audio/'+sounds[i]) ;
+    } catch(e) {}
 
 var ticker= scene.Ticker(tick, {tickDuration: SECONDS_PER_TICK*1000}) ;
 
@@ -61,6 +61,13 @@ function resume_ticker() {
 }
 
 
+function play_sound(s) {
+    try {
+	sound[s].play() ;
+    } catch(e) {}
+}
+
+
 function init(num_people) {
     for (var attempts= 0 ; attempts<20 ; attempts++) {
 	try {
@@ -71,14 +78,13 @@ function init(num_people) {
 	} catch(e) {
 	    scene.reset() ;    // kills the ticker too
 	    ticker= scene.Ticker(tick, {tickDuration: SECONDS_PER_TICK*1000}) ;
-	    person= [] ;
+	    people= [] ;
 	}
     }
     if (attempts>=20)
 	alert("We're having trouble placing enough people in this scene.  Either increase the size of the scene, or reduce the population, or reduce the sizes by reducing the percentages of high-status people.") ;
 
-    var audio = new Audio("audio/MUS_RoughMusicBaseIdea.wav");
-    audio.play();
+    play_sound('MUS_Level_1.wav') ;
 
     ticker.run() ;
 }
@@ -91,8 +97,8 @@ function add_person(aggression, pstatus) {    // "status" is a property of Windo
     do {
 	set_random_position(sp) ;
 	does_collide= false ;
-	for (var i= 0 ; i<person.length ; i++) {
-	    if (collides(sp, person[i].sp)) {
+	for (var i= 0 ; i<people.length ; i++) {
+	    if (collides(sp, people[i].sp)) {
 		does_collide= true ;
 		if (collisions++>100) {
 		    sp.remove() ;
@@ -102,10 +108,29 @@ function add_person(aggression, pstatus) {    // "status" is a property of Windo
 	    }
 	}
     } while (does_collide) ;
-    var new_person= {sp: sp, aggression: aggression, status: pstatus, vx: 0, vy: 0} ;
+    var new_person= {
+	sp: sp,
+	aggression: aggression,
+	status: pstatus,
+	vx: 0,
+	vy: 0,
+	get state() { return person_state(this) },
+	get aggression_impact() { return this.aggression*this.status }
+//      last_bump_time,
+//      last_bump_by,
+//      last_bump_magnitude
+    } ;
     sp.dom.addEventListener('click', function(e) { click_on_person(e, new_person) } , true) ;   // note closure
     new_person.sp.update() ;
-    person.push(new_person) ;
+    people.push(new_person) ;
+}
+
+
+function person_state(person) {
+    if (person.aggression>0)  return 'aggressor' ;
+    if (person.aggression==0) return 'bystander' ;
+    if (person.last_bump_by>0) return 'target' ;   // aggression<0
+    return 'ally' ;   // aggression<0 and last_bump_by<0
 }
 
 
@@ -113,7 +138,7 @@ function add_person(aggression, pstatus) {    // "status" is a property of Windo
 //   rectangles for collision, not the sprites themselves.  So we just use a
 //   radius here.
 function collides(s1, s2) {
-//    return s1.collidesWith(s2) ;   // could also use sp.collidesWithArray(person)
+//    return s1.collidesWith(s2) ;   // could also use sp.collidesWithArray(people)
     return ( within_range(s1, s2, ((s1.w*s1.xscale + s2.w*s2.xscale) / Math.SQRT2)) ) ;
 }
 
@@ -176,30 +201,33 @@ function set_random_position(sp) {
 
 function tick() {
     // first, move all people
-    for (var i= 0 ; i<person.length ; i++) {
-	person[i].old_pos= {x: person[i].sp.x, y: person[i].sp.y} ;
-	move_person(person[i]) ;
+    for (var i= 0 ; i<people.length ; i++) {
+	people[i].old_pos= {x: people[i].sp.x, y: people[i].sp.y} ;
+	move_person(people[i]) ;
     }
 
     // look for collisions
-    for (var i= 0 ; i<person.length ; i++)
-	for (var j= i+1 ; j<person.length ; j++)
-	    if (collides(person[i].sp, person[j].sp)) {
-		collide(person[i], person[j]) ;
-		person[i].sp.position(person[i].old_pos.x, person[i].old_pos.y) ;
-		person[j].sp.position(person[j].old_pos.x, person[j].old_pos.y) ;
+    for (var i= 0 ; i<people.length ; i++)
+	for (var j= i+1 ; j<people.length ; j++)
+	    if (collides(people[i].sp, people[j].sp)) {
+		collide(people[i], people[j]) ;
+		people[i].sp.position(people[i].old_pos.x, people[i].old_pos.y) ;
+		people[j].sp.position(people[j].old_pos.x, people[j].old_pos.y) ;
 	    }
 
     // clear out dead persons
     var i= 0 ;
-    while (i<person.length) {
-	if (person[i].sp.xscale==0) {
-	    person[i].sp.remove() ;
-	    person.splice(i, 1) ;
+    while (i<people.length) {
+	if (people[i].sp.xscale==0) {
+	    people[i].sp.remove() ;
+	    people.splice(i, 1) ;
 	} else {
 	    i++ ;
 	}
     }
+
+    happiness+= 0.2 ;
+    if (happiness>25) happiness=25 ;
 }
 
 
@@ -237,21 +265,38 @@ function move_person(person) {
 }
 
 
+
 function collide(p1, p2) {
-    var audio = new Audio("audio/SFX_Bump_01.wav");
-    audio.play();
+    play_sound('SFX_Bump_01.mp3') ;
+
+    p1.last_bump_time= p2.last_bump_time= ticker.currentTick ;
+    p1.last_bump_by= p2.aggression ;
+    p2.last_bump_by= p1.aggression ;
+
+
+    // now, decide result of collision
 
     // if either both allies or both aggressors
     if (p1.aggression*p2.aggression>0) {
-	add_to_aggression(p1, ALIKE_BUMP_INFLUENCE*p2.status*p2.aggression) ;
-	add_to_aggression(p2, ALIKE_BUMP_INFLUENCE*p1.status*p1.aggression) ;
+	add_to_aggression(p1, ALIKE_BUMP_INFLUENCE*p2.aggression_impact) ;
+	add_to_aggression(p2, ALIKE_BUMP_INFLUENCE*p1.aggression_impact) ;
+	p1.last_bump_magnitude= p2.last_bump_magnitude= p1.aggression_impact + p2.aggression_impact ;
 
     // two bystanders
     } else if ((p1.aggression==0) && (p2.aggression==0)) {
 	// do nothing
 
+	p1.last_bump_magnitude= p2.last_bump_magnitude= 0 ;
 
-    //jsm-- what about ally and bystander?
+
+    // ally and bystander
+    } else if (p1.aggression==0) {
+	add_to_aggression(p1, ALIKE_BUMP_INFLUENCE*p2.aggression_impact) ;
+	p1.last_bump_magnitude= p2.last_bump_magnitude= p2.aggression_impact ;
+    } else if (p2.aggression==0) {
+	add_to_aggression(p2, ALIKE_BUMP_INFLUENCE*p1.aggression_impact) ;
+	p1.last_bump_magnitude= p2.last_bump_magnitude= p1.aggression_impact ;
+
 
     // aggressor and target
     } else {
@@ -263,13 +308,13 @@ function collide(p1, p2) {
 	    aggressor= p2 ;
 	    target= p1 ;
 	}
-	var bump_magnitude= p1.aggression*p1.status + p2.aggression*p2.status ;
+	var bump_magnitude= p1.aggression_impact + p2.aggression_impact ;
 
-	// modify by aggression*status of all within range INFLUENCE_RANGE .
+	// modify by aggression_impact of all within range INFLUENCE_RANGE .
 	// this doesn't yet handle "remote allies".
-	for (var i= 0 ; i<person.length ; i++)
-	    if ((person[i]!==aggressor) && within_range(aggressor.sp, person[i].sp, INFLUENCE_RANGE))
-		bump_magnitude+= 0.25*person[i].aggression*person[i].status ;
+	for (var i= 0 ; i<people.length ; i++)
+	    if ((people[i]!==aggressor) && within_range(aggressor.sp, people[i].sp, INFLUENCE_RANGE))
+		bump_magnitude+= 0.25*people[i].aggression_impact ;
 
 	var impact_range= bump_magnitude*15 ;
 
@@ -278,15 +323,15 @@ function collide(p1, p2) {
 	// acts of bias-motivated violence
 	if ((bump_magnitude>40) && (bump_magnitude<45)) {
 	    // delete person: mark as dead with scale=0, then sweep out afterward .
-	    // otherwise, if we delete from person[] now, will confuse loop in tick() .
+	    // otherwise, if we delete from people[] now, will confuse loop in tick() .
 	    target.sp.scale(0) ;
 
 	// genocide
 	} else if (bump_magnitude>=45) {
 	    // delete all allies within impact_range
-	    for (var i= 0 ; i<person.length ; i++)
-		if ((person[i].aggression<0) && (within_range(aggressor.sp, person[i].sp, impact_range)))
-		    person[i].sp.scale(0) ;
+	    for (var i= 0 ; i<people.length ; i++)
+		if ((people[i].aggression<0) && (within_range(aggressor.sp, people[i].sp, impact_range)))
+		    people[i].sp.scale(0) ;
 
 	} else {
 	    // increase target aggression if target survives-- is this appropriate?
@@ -298,16 +343,51 @@ function collide(p1, p2) {
 	add_to_aggression(aggressor, 0.25*bump_magnitude) ;
 
 	// increase aggression of all people within impact range-- is this appropriate?
-	for (var i= 0 ; i<person.length ; i++)
-	    if ((person[i]!==aggressor) && (within_range(aggressor.sp, person[i].sp, impact_range)))
-		add_to_aggression(person[i], 0.1*bump_magnitude) ;
+	for (var i= 0 ; i<people.length ; i++)
+	    if ((people[i]!==aggressor) && (within_range(aggressor.sp, people[i].sp, impact_range)))
+		add_to_aggression(people[i], 0.1*bump_magnitude) ;
+
+	p1.last_bump_magnitude= p2.last_bump_magnitude= bump_magnitude ;
     }
 }
 
 
 function click_on_person(e, person) {
-    var target= e.target || e.srcElement ;     // MSIE uses e.srcElement
-    add_to_aggression(person, -10) ;
+    var state= person.state ;
+
+    if (state=='bystander' || state=='ally')
+	person.aggression-- ;
+
+    else if (person.state=='target') {
+	if (person.last_bump_time>ticker.currentTick-5/SECONDS_PER_TICK) {
+	    var click_magnitude= -0.5*person.last_bump_magnitude ;
+	    for (var i= 0 ; i<people.length ; i++)
+		if (people[i]!==person && within_range(person.sp, people[i].sp, CLICK_RANGE))
+		    click_magnitude+= 0.25*people[i].aggression_impact ;
+	    person.aggression+= click_magnitude ;
+	} else {
+	    person.aggression-- ;
+	}
+
+    } else {  // person.state=='aggressor'
+	var happiness_cost= 0.1*person.aggression_impact ;
+	for (var i= 0 ; i<people.length ; i++)
+	    if (people[i]!==person && people[i].state=='ally'
+		&& within_range(person.sp, people[i].sp, CLICK_RANGE))
+	    {
+		happiness_cost+= 0.05*people[i].aggression_impact ;
+	    }
+	happiness-= happiness_cost ;
+	if (person.last_bump_time>ticker.currentTick-5/SECONDS_PER_TICK) {
+	    var click_magnitude= -0.25*person.last_bump_magnitude ;
+	    for (var i= 0 ; i<people.length ; i++)
+		if (people[i]!==person && within_range(person.sp, people[i].sp, CLICK_RANGE))
+		    click_magnitude+= 0.25*people[i].aggression_impact ;
+	    person.aggression+= click_magnitude ;
+	} else {
+	    person.aggression-- ;
+	}
+    }
 }
 
 
