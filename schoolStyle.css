@@ -12,6 +12,22 @@ body {
     padding: 10px;
 }
 
+.content {
+    margin: auto;
+    padding: 10px;
+    width: 90px;
+}
+
+#start {
+    font-size: 48px;
+    text-align: center;
+    background-color: lightgreen;
+    color: green;
+    padding: 8px;
+    border-radius: 20px;
+    text-decoration: none;
+}
+
 #topBar {
     height: 80px;
     width: 100%;
@@ -26,8 +42,7 @@ body {
 }
 
 #happiness {
-    position: fixed;
-    top: 50px;
+    float: right;
     color: green;
     z-index: 1;
     font-size: 24;
@@ -36,7 +51,8 @@ body {
 }
 
 #pause {
-    position: fixed;
+    position: absolute;
+    top: 0;
     left: 0;
     padding: 2px;
     margin: 5px;
@@ -44,7 +60,8 @@ body {
 }
 
 #resume {
-    position: fixed;
+    position: absolute;
+    top: 0;
     left: 0;
     padding: 2px;
     margin: 5px;

@@ -68,6 +68,7 @@ function resume_ticker() {
     cur_music.play() ;
 }
 
+
 function update_happiness() {
     document.getElementById("happiness").innerHTML = "Happiness: " + Math.round(happiness*100)/100;
 }
