@@ -8,7 +8,7 @@ var POPULATION= 50 ;
 var SCENE_WIDTH= 1920 ;
 var SCENE_HEIGHT= 1080 ;
 var MAX_MOVE= 30 ;
-var MAX_ACCELERATE= 10 ;
+var MAX_ACCELERATE= 1 ;
 var SECONDS_PER_TICK= 0.1 ;
 
 var ALIKE_BUMP_INFLUENCE= 0.1 ;
@@ -16,9 +16,9 @@ var INFLUENCE_RANGE= 200 ;
 var CLICK_RANGE= 200 ;
 
 var STATUS_DISTRIBUTION= [69, 15, 10, 5, 1] ;
-var AGGRESSION_DISTRIBUTION= [ [10, 2],
-			       [20, -2],
-			       [70, 0]
+var AGGRESSION_DISTRIBUTION= [ [2, 10],
+			       [8, 2],
+			       [90, 0]
 			     ] ;
 
 var STATUS_SIZES= [0.4, 0.6, 0.8, 1.0, 1.2] ;
@@ -260,7 +260,7 @@ function tick() {
 
     var lost= true ;
     for (var i= 0 ; i<people.length ; i++)
-	if (people[i].aggression<0) {
+	if (people[i].aggression<=0) {
 	    lost= false ;
 	    break ;
 	}
@@ -268,7 +268,7 @@ function tick() {
 
     var won= true ;
     for (var i= 0 ; i<people.length ; i++)
-	if (people[i].aggression>0) {
+	if (people[i].aggression>=0) {
 	    won= false ;
 	    break ;
 	}
