@@ -65,7 +65,8 @@ function resume_ticker() {
 }
 
 function update_score() {
-    document.getElementById("score").innerHTML = "Score: " + happiness;
+    var score = Math.round(happiness);
+    document.getElementById("score").innerHTML = "Score: " + score;
 }
 
 
