@@ -36,12 +36,14 @@ var images= 'aggressor1.png aggressor2.png aggressor3.png aggressor4.png aggress
 for (var i= 0 ; i<images.length ; i++)  images[i]= 'images/'+images[i] ;
 
 // preload sounds
-var sounds= 'MUS_Level_1.wav MUS_Level_2.wav MUS_Level_3.wav SFX_Bump_1.mp3 SFX_Bump_2.mp3 SFX_Bump_3.mp3 SFX_Bump_4.mp3 SFX_Bump_5.mp3 SFX_StartClick.mp3 SFX_New_Ally_Sound_01.mp3 SFX_Make_Friend.mp3 SFX_Click_Aggressor.mp3 SFX_Drag_Ally.mp3 SFX_Support_Target.mp3 SFX_Preemptive_Click.mp3 SFX_Ally_Win.mp3 SFX_Aggressor_Win.mp3 Mus_Player_Win.mp3 Mus_Player_Lose.mp3'.split(/\s+/) ;
+var sounds= 'MUS_Level_1.wav MUS_Level_2.wav MUS_Level_3.wav SFX_Bump_1.mp3 SFX_Bump_2.mp3 SFX_Bump_3.mp3 SFX_Bump_4.mp3 SFX_Bump_5.mp3 SFX_StartClick.mp3 SFX_New_Ally_Sound_01.mp3 SFX_Make_Friend.mp3 SFX_Click_Aggressor.mp3 SFX_Drag_Ally.mp3 SFX_Support_Target.mp3 SFX_Preemptive_Click.mp3 SFX_Ally_Win.mp3 SFX_Aggressor_Win.mp3 MUS_Player_Win.mp3 MUS_Player_Lose.mp3'.split(/\s+/) ;
 var sound= {} ;
 for (var i= 0 ; i<sounds.length ; i++)
     try {
 	sound[sounds[i]]= new Audio('audio/'+sounds[i]) ;
     } catch(e) {}
+
+var cur_music_level= 1, cur_music ;
 
 var ticker= scene.Ticker(tick, {tickDuration: SECONDS_PER_TICK*1000}) ;
 
@@ -54,6 +56,7 @@ function pause_ticker() {
     document.getElementById("pause").style.display = "none";
     document.getElementById("resume").style.display = "block";
     ticker.pause() ;
+    cur_music.pause() ;
 }
 
 // work around bug where extra resume() call accelerates ticker, by pausing first.
@@ -62,6 +65,7 @@ function resume_ticker() {
     document.getElementById("pause").style.display = "block";
     ticker.pause() ;
     ticker.resume() ;
+    cur_music.play() ;
 }
 
 
@@ -71,9 +75,18 @@ function update_happiness() {
 
 
 function play_sound(s) {
-    try {
-	sound[s].play() ;
-    } catch(e) {}
+    // sound[s].play() won't work when one sound needs to be played more than
+    //   once simultaneously, like for sprite bumps, so just do this.
+    new Audio('audio/'+s).play() ;
+//    try {
+//	sound[s].play() ;
+//    } catch(e) {}
+}
+
+function play_music(s) {
+    try { cur_music.pause() } catch(e) {}
+    cur_music= sound[s] ;
+    try { cur_music.play() } catch(e) {}
 }
 
 
@@ -93,7 +106,7 @@ function init(num_people) {
     if (attempts>=20)
 	alert("We're having trouble placing enough people in this scene.  Either increase the size of the scene, or reduce the population, or reduce the sizes by reducing the percentages of high-status people.") ;
 
-    play_sound('MUS_Level_1.wav') ;
+    play_music('MUS_Level_'+cur_music_level+'.wav') ;
 
     ticker.run() ;
 }
@@ -117,6 +130,7 @@ function add_person(aggression, pstatus) {    // "status" is a property of Windo
 	    }
 	}
     } while (does_collide) ;
+
     var new_person= {
 	sp: sp,
 	aggression: aggression,
@@ -241,7 +255,44 @@ function tick() {
 
     // show happiness
     update_happiness();
+
+    if (happiness<0) game_lose() ;
+
+
+    var lost= true ;
+    for (var i= 0 ; i<people.length ; i++)
+	if (people[i].aggression<0) {
+	    lost= false ;
+	    break ;
+	}
+    if (lost) game_lose() ;
+
+    var won= true ;
+    for (var i= 0 ; i<people.length ; i++)
+	if (people[i].aggression>0) {
+	    won= false ;
+	    break ;
+	}
+    if (won) game_win() ;
+
+
+    var total_status= 0, total_aggression_impact= 0 ;
+    for (var i= 0 ; i<people.length ; i++) {
+	total_status+= people[i].status ;
+	total_aggression_impact+= people[i].aggression_impact ;
+    }
+
+    var new_music_level= music_level(total_aggression_impact/total_status) ;
+    if (new_music_level!=cur_music_level) play_music('MUS_Level_'+new_music_level+'.wav') ;
 }
+
+
+function music_level(avg_aggression) {
+    if (avg_aggression>=5)  return 1 ;
+    if (avg_aggression>=25) return 2 ;
+    return 3 ;
+}
+
 
 
 function move_person(person) {
@@ -300,7 +351,7 @@ function redirect_after_collision(p1, p2) {
 
 
 function collide(p1, p2) {
-    play_sound('SFX_Bump_01.mp3') ;
+    play_sound('SFX_Bump_1.mp3') ;
 
     p1.last_bump_time= p2.last_bump_time= ticker.currentTick ;
     p1.last_bump_by= p2.aggression ;
@@ -422,5 +473,17 @@ function click_on_person(e, person) {
 	}
     }
 }
+
+
+function game_win() {
+    ticker.pause() ;
+    play_sound('MUS_Player_Win.mp3') ;
+}
+
+function game_lose() {
+    ticker.pause() ;
+    play_sound('MUS_Player_Lose.mp3') ;
+}
+
 
 
