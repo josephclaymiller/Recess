@@ -16,8 +16,8 @@ var INFLUENCE_RANGE= 100 ;
 var CLICK_RANGE= 200 ;
 
 var STATUS_DISTRIBUTION= [69, 15, 10, 5, 1] ;
-var AGGRESSION_DISTRIBUTION= [ [2, 10],
-			       [8, 2],
+var AGGRESSION_DISTRIBUTION= [ [2, 20],
+			       [8, 4],
 			       [90, 0]
 			     ] ;
 
@@ -138,7 +138,7 @@ function add_person(aggression, pstatus) {    // "status" is a property of Windo
 	vx: 0,
 	vy: 0,
 	get state() { return person_state(this) },
-	get aggression_impact() { return this.aggression*this.status/1.5 }  // experimenting....
+	get aggression_impact() { return this.aggression*this.status }
 //      last_bump_time,
 //      last_bump_by,
 //      last_bump_magnitude
@@ -282,7 +282,7 @@ function tick() {
 	total_aggression_impact+= people[i].aggression_impact ;
     }
 
-    var avg_aggression= total_aggression_impact/total_status*2 ;  // since we divide by 2 for aggression_impact
+    var avg_aggression= total_aggression_impact/total_status ;
     document.getElementById("avg_aggression").innerHTML = "Aggression: " + Math.round(avg_aggression*100)/100;	
     var new_music_level= music_level(avg_aggression) ;
     if (new_music_level!=cur_music_level) play_music('MUS_Level_'+new_music_level+'.wav') ;
@@ -291,8 +291,8 @@ function tick() {
 
 
 function music_level(avg_aggression) {
-    if (avg_aggression>=2) return 3 ;
-    if (avg_aggression>=1) return 2 ;
+    if (avg_aggression>=5) return 3 ;
+    if (avg_aggression>=2) return 2 ;
     return 1 ;
 }
 
@@ -377,10 +377,10 @@ function collide(p1, p2) {
 
 
     // ally and bystander
-    } else if (p1.aggression==0) {
+    } else if (p1.aggression==0 && p2.aggression<0) {
 	add_to_aggression(p1, ALIKE_BUMP_INFLUENCE*p2.aggression_impact) ;
 	p1.last_bump_magnitude= p2.last_bump_magnitude= p2.aggression_impact ;
-    } else if (p2.aggression==0) {
+    } else if (p2.aggression==0 && p1.aggression<0) {
 	add_to_aggression(p2, ALIKE_BUMP_INFLUENCE*p1.aggression_impact) ;
 	p1.last_bump_magnitude= p2.last_bump_magnitude= p1.aggression_impact ;
 
@@ -403,7 +403,7 @@ function collide(p1, p2) {
 	    if ((people[i]!==aggressor) && within_range(aggressor.sp, people[i].sp, INFLUENCE_RANGE))
 		bump_magnitude+= 0.25*people[i].aggression_impact ;
 
-	var impact_range= bump_magnitude*15 ;
+	var impact_range= bump_magnitude*5 ;
 
 	// apply results of bump
 
