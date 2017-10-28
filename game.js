@@ -440,17 +440,17 @@ function click_on_person(e, person) {
     var state= person.state ;
 
     if (state=='bystander' || state=='ally')
-	person.aggression-- ;
+	add_to_aggression(person, -1) ;
 
-    else if (person.state=='target') {
+    else if (state=='target') {
 	if (person.last_bump_time>ticker.currentTick-5/SECONDS_PER_TICK) {
 	    var click_magnitude= -0.5*person.last_bump_magnitude ;
 	    for (var i= 0 ; i<people.length ; i++)
 		if (people[i]!==person && within_range(person.sp, people[i].sp, CLICK_RANGE))
 		    click_magnitude+= 0.25*people[i].aggression_impact ;
-	    person.aggression+= click_magnitude ;
+	    add_to_aggression(person, click_magnitude) ;
 	} else {
-	    person.aggression-- ;
+	    add_to_aggression(person, -1) ;
 	}
 
     } else {  // person.state=='aggressor'
@@ -467,9 +467,9 @@ function click_on_person(e, person) {
 	    for (var i= 0 ; i<people.length ; i++)
 		if (people[i]!==person && within_range(person.sp, people[i].sp, CLICK_RANGE))
 		    click_magnitude+= 0.25*people[i].aggression_impact ;
-	    person.aggression+= click_magnitude ;
+	    add_to_aggression(person, click_magnitude) ;
 	} else {
-	    person.aggression-- ;
+	    add_to_aggression(person, -1) ;
 	}
     }
 }
