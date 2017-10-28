@@ -41,6 +41,15 @@ body {
     margin: auto;
 }
 
+#avg_aggression {
+    float: right;
+    color: green;
+    z-index: 1;
+    font-size: 24;
+    background-color: lightgreen;
+    padding: 4px;
+}
+
 #happiness {
     float: right;
     color: green;

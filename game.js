@@ -12,7 +12,7 @@ var MAX_ACCELERATE= 1 ;
 var SECONDS_PER_TICK= 0.1 ;
 
 var ALIKE_BUMP_INFLUENCE= 0.1 ;
-var INFLUENCE_RANGE= 200 ;
+var INFLUENCE_RANGE= 100 ;
 var CLICK_RANGE= 200 ;
 
 var STATUS_DISTRIBUTION= [69, 15, 10, 5, 1] ;
@@ -138,7 +138,7 @@ function add_person(aggression, pstatus) {    // "status" is a property of Windo
 	vx: 0,
 	vy: 0,
 	get state() { return person_state(this) },
-	get aggression_impact() { return this.aggression*this.status/2 }  // experimenting....
+	get aggression_impact() { return this.aggression*this.status/1.5 }  // experimenting....
 //      last_bump_time,
 //      last_bump_by,
 //      last_bump_magnitude
@@ -282,15 +282,18 @@ function tick() {
 	total_aggression_impact+= people[i].aggression_impact ;
     }
 
-    var new_music_level= music_level(total_aggression_impact/total_status) ;
+    var avg_aggression= total_aggression_impact/total_status*2 ;  // since we divide by 2 for aggression_impact
+    document.getElementById("avg_aggression").innerHTML = "Aggression: " + Math.round(avg_aggression*100)/100;	
+    var new_music_level= music_level(avg_aggression) ;
     if (new_music_level!=cur_music_level) play_music('MUS_Level_'+new_music_level+'.wav') ;
+    cur_music_level= new_music_level ;
 }
 
 
 function music_level(avg_aggression) {
-    if (avg_aggression>=5)  return 1 ;
-    if (avg_aggression>=25) return 2 ;
-    return 3 ;
+    if (avg_aggression>=2) return 3 ;
+    if (avg_aggression>=1) return 2 ;
+    return 1 ;
 }
 
 
@@ -477,12 +480,12 @@ function click_on_person(e, person) {
 
 function game_win() {
     ticker.pause() ;
-    play_sound('MUS_Player_Win.mp3') ;
+    play_music('MUS_Player_Win.mp3') ;
 }
 
 function game_lose() {
     ticker.pause() ;
-    play_sound('MUS_Player_Lose.mp3') ;
+    play_music('MUS_Player_Lose.mp3') ;
 }
 
 
